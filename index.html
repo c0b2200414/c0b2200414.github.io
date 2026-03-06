@@ -1,356 +1,456 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>たばこ記録ツール</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>たばこ記録ツール</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --danger: #dc2626;
+      --border: #e5e7eb;
+      --bar: #93c5fd;
+    }
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    * { box-sizing: border-box; }
 
-<style>
-body{
-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-background:#f5f6fa;
-padding:20px;
-margin:0;
-}
+    body {
+      margin: 0;
+      padding: 16px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
 
-.container{
-max-width:700px;
-margin:auto;
-}
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
 
-.card{
-background:white;
-padding:18px;
-border-radius:14px;
-margin-bottom:16px;
-box-shadow:0 3px 10px rgba(0,0,0,0.08);
-}
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+    }
 
-h1,h2{margin-top:0}
+    h1, h2, h3 {
+      margin: 0 0 12px;
+    }
 
-button{
-width:100%;
-padding:16px;
-font-size:20px;
-border:none;
-border-radius:12px;
-background:#2563eb;
-color:white;
-font-weight:bold;
-cursor:pointer;
-}
+    .muted {
+      color: var(--muted);
+      font-size: 14px;
+    }
 
-button:active{transform:scale(0.97)}
+    .main-button {
+      width: 100%;
+      border: none;
+      border-radius: 16px;
+      padding: 18px;
+      font-size: 22px;
+      font-weight: 800;
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+    }
 
-.stats{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:10px;
-}
+    .main-button:active,
+    .small-button:active,
+    .save-button:active {
+      transform: scale(0.98);
+    }
 
-.stat{
-background:#f1f3f8;
-padding:12px;
-border-radius:10px;
-text-align:center;
-}
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
 
-.stat-title{
-font-size:13px;
-color:#666;
-}
+    .stat-box {
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+    }
 
-.stat-value{
-font-size:24px;
-font-weight:bold;
-}
+    .stat-label {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
 
-input{
-padding:10px;
-border-radius:8px;
-border:1px solid #ddd;
-font-size:16px;
-}
+    .stat-value {
+      font-size: 26px;
+      font-weight: 800;
+    }
 
-.row{
-display:flex;
-gap:10px;
-margin-top:10px;
-}
+    .form-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
 
-.money{
-font-size:20px;
-font-weight:bold;
-color:#dc2626;
-}
+    input[type="number"] {
+      width: 140px;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: white;
+    }
 
-ul{
-list-style:none;
-padding:0;
-max-height:250px;
-overflow:auto;
-}
+    .save-button,
+    .small-button {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: white;
+      cursor: pointer;
+      width: auto;
+      font-size: 15px;
+      font-weight: 700;
+    }
 
-li{
-padding:8px 0;
-border-bottom:1px solid #eee;
-font-size:14px;
-}
+    .save-button { background: #111827; }
+    .small-button { background: var(--danger); }
 
-canvas{
-max-height:250px;
-}
+    .money {
+      font-size: 30px;
+      font-weight: 800;
+      color: var(--danger);
+      margin-top: 4px;
+    }
 
-</style>
+    .week-chart {
+      display: grid;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .week-row {
+      display: grid;
+      grid-template-columns: 56px 1fr 40px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .week-label,
+    .week-count {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .week-track {
+      height: 20px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .week-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--bar);
+      transition: width 0.25s ease;
+    }
+
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-height: 280px;
+      overflow: auto;
+    }
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    @media (max-width: 640px) {
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .week-row {
+        grid-template-columns: 48px 1fr 32px;
+      }
+
+      li {
+        flex-direction: column;
+      }
+    }
+  </style>
 </head>
-
 <body>
-
-<div class="container">
-
-<div class="card">
-<h1>🚬 たばこ記録</h1>
-<button id="recordBtn">1本吸った</button>
-</div>
-
-<div class="card">
-<h2>今日の状況</h2>
-
-<div class="stats">
-<div class="stat">
-<div class="stat-title">今日の本数</div>
-<div class="stat-value" id="todayCount">0</div>
-</div>
-
-<div class="stat">
-<div class="stat-title">上限</div>
-<div class="stat-value" id="limitCount">10</div>
-</div>
-
-<div class="stat">
-<div class="stat-title">残り</div>
-<div class="stat-value" id="remainCount">10</div>
-</div>
-</div>
-
-<div class="row">
-<input type="number" id="limitInput" value="10">
-<button id="saveLimit">保存</button>
-</div>
-
-</div>
-
-<div class="card">
-<h2>💰 今日使った金額</h2>
-<div class="money" id="moneyToday">0円</div>
-
-<div class="row">
-<input type="number" id="priceInput" value="600">
-<span>円 / 1箱</span>
-</div>
-
-<p style="font-size:13px;color:#666">※1箱20本で計算</p>
-</div>
-
-<div class="card">
-<h2>📊 1週間の本数</h2>
-<canvas id="weekChart"></canvas>
-</div>
-
-<div class="card">
-<h2>今日の記録</h2>
-<ul id="logList"></ul>
-</div>
-
-</div>
-
-<script>
-
-const LOG_KEY="smoke_logs";
-const LIMIT_KEY="smoke_limit";
-const PRICE_KEY="smoke_price";
-
-function getLogs(){
-return JSON.parse(localStorage.getItem(LOG_KEY)||"[]")
-}
-
-function saveLogs(logs){
-localStorage.setItem(LOG_KEY,JSON.stringify(logs))
-}
-
-function todayString(d){
-return new Date(d).toISOString().slice(0,10)
-}
-
-function today(){
-return new Date().toISOString().slice(0,10)
-}
-
-function getLimit(){
-return Number(localStorage.getItem(LIMIT_KEY)||10)
-}
-
-function setLimit(v){
-localStorage.setItem(LIMIT_KEY,v)
-}
-
-function getPrice(){
-return Number(localStorage.getItem(PRICE_KEY)||500)
-}
-
-function setPrice(v){
-localStorage.setItem(PRICE_KEY,v)
-}
-
-function render(){
-
-const logs=getLogs()
-const todayLogs=logs.filter(l=>todayString(l)==today())
-
-const todayCount=todayLogs.length
-const limit=getLimit()
-
-
-// counts
-
-document.getElementById("todayCount").textContent=todayCount
-
-document.getElementById("limitCount").textContent=limit
-
-document.getElementById("remainCount").textContent=Math.max(limit-todayCount,0)
-
-
-// money
-
-const price=getPrice()
-
-const perCig=price/20
-
-const money=Math.round(todayCount*perCig)
-
-
-document.getElementById("moneyToday").textContent=money+"円"
-
-
-// log list
-
-const list=document.getElementById("logList")
-
-list.innerHTML=""
-
-
-[...todayLogs].reverse().forEach(l=>{
-
-const li=document.createElement("li")
-
-li.textContent=new Date(l).toLocaleTimeString()
-
-list.appendChild(li)
-
-})
-
-
-renderChart()
-
-}
-
-
-function renderChart(){
-
-const logs=getLogs()
-
-let labels=[]
-
-let data=[]
-
-for(let i=6;i>=0;i--){
-
-const d=new Date()
-
-d.setDate(d.getDate()-i)
-
-const key=d.toISOString().slice(0,10)
-
-labels.push(key.slice(5))
-
-
-const count=logs.filter(l=>todayString(l)==key).length
-
-data.push(count)
-
-}
-
-
-const ctx=document.getElementById("weekChart")
-
-if(window.chart)window.chart.destroy()
-
-window.chart=new Chart(ctx,{type:"bar",
-
-data:{labels:labels,
-
-datasets:[{label:"本数",
-
-data:data}]
-}
-
-})
-
-}
-
-
-
-// record
-
-
-document.getElementById("recordBtn").onclick=()=>{
-
-const logs=getLogs()
-
-logs.push(new Date().toISOString())
-
-saveLogs(logs)
-
-render()
-
-}
-
-
-
-// save limit
-
-
-document.getElementById("saveLimit").onclick=()=>{
-
-setLimit(document.getElementById("limitInput").value)
-
-render()
-
-}
-
-
-
-// price
-
-
-document.getElementById("priceInput").value=getPrice()
-
-
-document.getElementById("priceInput").onchange=e=>{
-
-setPrice(e.target.value)
-
-render()
-
-}
-
-
-render()
-
-</script>
-
+  <div class="container">
+    <div class="card">
+      <h1>たばこ記録ツール</h1>
+      <p class="muted">ボタンを押すと、その時刻を記録します。</p>
+      <button class="main-button" id="recordBtn" type="button">1本吸った</button>
+    </div>
+
+    <div class="card">
+      <h2>今日の状況</h2>
+      <div class="stats">
+        <div class="stat-box">
+          <div class="stat-label">今日の本数</div>
+          <div class="stat-value" id="todayCount">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">1日の上限</div>
+          <div class="stat-value" id="limitValue">10</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">残り本数</div>
+          <div class="stat-value" id="remainingCount">10</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label for="dailyLimit">上限</label>
+        <input type="number" id="dailyLimit" min="1" value="10" />
+        <button class="save-button" id="saveLimitBtn" type="button">保存</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>今日使った金額</h2>
+      <div class="money" id="moneyToday">0円</div>
+      <p class="muted">1箱20本として計算します。</p>
+      <div class="form-row">
+        <label for="boxPrice">1箱の値段</label>
+        <input type="number" id="boxPrice" min="1" value="500" />
+        <button class="save-button" id="savePriceBtn" type="button">保存</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>1週間の本数</h2>
+      <div id="weekChart" class="week-chart"></div>
+    </div>
+
+    <div class="card">
+      <h2>今日の記録一覧</h2>
+      <p class="muted">最新20件まで表示</p>
+      <ul id="logList"></ul>
+      <button class="small-button" id="clearTodayBtn" type="button">今日の記録を削除</button>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "smoking_logs_v2";
+    const LIMIT_KEY = "smoking_daily_limit_v2";
+    const PRICE_KEY = "smoking_box_price_v2";
+
+    const recordBtn = document.getElementById("recordBtn");
+    const saveLimitBtn = document.getElementById("saveLimitBtn");
+    const savePriceBtn = document.getElementById("savePriceBtn");
+    const clearTodayBtn = document.getElementById("clearTodayBtn");
+
+    const todayCountEl = document.getElementById("todayCount");
+    const limitValueEl = document.getElementById("limitValue");
+    const remainingCountEl = document.getElementById("remainingCount");
+    const dailyLimitInput = document.getElementById("dailyLimit");
+    const boxPriceInput = document.getElementById("boxPrice");
+    const moneyTodayEl = document.getElementById("moneyToday");
+    const weekChartEl = document.getElementById("weekChart");
+    const logListEl = document.getElementById("logList");
+
+    function getLogs() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function saveLogs(logs) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+    }
+
+    function getLimit() {
+      return Number(localStorage.getItem(LIMIT_KEY) || 10);
+    }
+
+    function saveLimit(limit) {
+      localStorage.setItem(LIMIT_KEY, String(limit));
+    }
+
+    function getBoxPrice() {
+      return Number(localStorage.getItem(PRICE_KEY) || 500);
+    }
+
+    function saveBoxPrice(price) {
+      localStorage.setItem(PRICE_KEY, String(price));
+    }
+
+    function formatLocalDateKey(dateValue) {
+      const d = new Date(dateValue);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function getTodayKey() {
+      return formatLocalDateKey(new Date());
+    }
+
+    function formatDateTime(value) {
+      return new Date(value).toLocaleString("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+    }
+
+    function renderWeekChart(logs) {
+      weekChartEl.innerHTML = "";
+
+      const rows = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        d.setDate(d.getDate() - i);
+        const key = formatLocalDateKey(d);
+        const label = `${d.getMonth() + 1}/${d.getDate()}`;
+        const count = logs.filter(log => formatLocalDateKey(log) === key).length;
+        rows.push({ label, count });
+      }
+
+      const maxCount = Math.max(...rows.map(r => r.count), 1);
+
+      rows.forEach(row => {
+        const line = document.createElement("div");
+        line.className = "week-row";
+
+        const label = document.createElement("div");
+        label.className = "week-label";
+        label.textContent = row.label;
+
+        const track = document.createElement("div");
+        track.className = "week-track";
+
+        const fill = document.createElement("div");
+        fill.className = "week-fill";
+        fill.style.width = `${(row.count / maxCount) * 100}%`;
+
+        const count = document.createElement("div");
+        count.className = "week-count";
+        count.textContent = `${row.count}本`;
+
+        track.appendChild(fill);
+        line.appendChild(label);
+        line.appendChild(track);
+        line.appendChild(count);
+        weekChartEl.appendChild(line);
+      });
+    }
+
+    function renderLogList(todayLogs) {
+      logListEl.innerHTML = "";
+
+      const recentLogs = [...todayLogs].reverse().slice(0, 20);
+
+      if (recentLogs.length === 0) {
+        const li = document.createElement("li");
+        li.textContent = "まだ記録はありません。";
+        logListEl.appendChild(li);
+        return;
+      }
+
+      recentLogs.forEach((log, index) => {
+        const li = document.createElement("li");
+        const left = document.createElement("span");
+        const right = document.createElement("span");
+        left.textContent = `${todayLogs.length - index}本目`;
+        right.textContent = formatDateTime(log);
+        li.appendChild(left);
+        li.appendChild(right);
+        logListEl.appendChild(li);
+      });
+    }
+
+    function render() {
+      const logs = getLogs();
+      const todayKey = getTodayKey();
+      const todayLogs = logs.filter(log => formatLocalDateKey(log) === todayKey);
+
+      const todayCount = todayLogs.length;
+      const limit = getLimit();
+      const remaining = Math.max(limit - todayCount, 0);
+      const boxPrice = getBoxPrice();
+      const perCigarette = boxPrice / 20;
+      const moneyToday = Math.round(todayCount * perCigarette);
+
+      todayCountEl.textContent = String(todayCount);
+      limitValueEl.textContent = String(limit);
+      remainingCountEl.textContent = String(remaining);
+      moneyTodayEl.textContent = `${moneyToday}円`;
+
+      dailyLimitInput.value = String(limit);
+      boxPriceInput.value = String(boxPrice);
+
+      renderWeekChart(logs);
+      renderLogList(todayLogs);
+    }
+
+    recordBtn.addEventListener("click", () => {
+      const logs = getLogs();
+      logs.push(new Date().toISOString());
+      saveLogs(logs);
+      render();
+    });
+
+    saveLimitBtn.addEventListener("click", () => {
+      const limit = Number(dailyLimitInput.value);
+      if (!limit || limit < 1) {
+        alert("上限は1以上にしてください。");
+        return;
+      }
+      saveLimit(limit);
+      render();
+    });
+
+    savePriceBtn.addEventListener("click", () => {
+      const price = Number(boxPriceInput.value);
+      if (!price || price < 1) {
+        alert("値段は1以上にしてください。");
+        return;
+      }
+      saveBoxPrice(price);
+      render();
+    });
+
+    clearTodayBtn.addEventListener("click", () => {
+      const ok = confirm("今日の記録だけ削除しますか？");
+      if (!ok) return;
+      const todayKey = getTodayKey();
+      const logs = getLogs().filter(log => formatLocalDateKey(log) !== todayKey);
+      saveLogs(logs);
+      render();
+    });
+
+    render();
+  </script>
 </body>
 </html>
-
